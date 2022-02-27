@@ -13,10 +13,9 @@ import { insertTweetData } from "./modules/InsertTweetData.js";
 
 const sendMessage = async (client: Client, text: string): Promise<boolean> => {
   const channel = (await client.channels.cache.get(
-    "947186507217788938"
-  )) as ThreadChannel;
+    "947557573807198288"
+  )) as TextChannel;
   if (channel) {
-    if (!channel.joined && channel?.joinable) await channel.join();
     await channel.send({
       content: text,
     });
