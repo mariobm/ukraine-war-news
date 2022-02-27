@@ -40,5 +40,8 @@
     "dotenv": "^16.0.0",
     "mongoose": "^6.2.3",
     "regenerator-runtime": "^0.13.9"
+  },
+  "engines": {
+    "node": "16.14.0"
   }
 }
