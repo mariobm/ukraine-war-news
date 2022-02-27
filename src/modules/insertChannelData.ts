@@ -3,12 +3,13 @@ import { errorHandler } from "../utils/errorHandler.js";
 
 export const upsertChannelData = async (
   channelId: string,
+  channelName: string,
   subscribed: boolean
 ): Promise<boolean> => {
   try {
     await ChannelModel.updateOne(
       { channelId },
-      { subscribed },
+      { subscribed, channelName },
       { upsert: true }
     );
     return true;

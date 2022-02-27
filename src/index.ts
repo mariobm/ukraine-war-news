@@ -12,34 +12,41 @@ import { getTweetData } from "./modules/getTweetData.js";
 import { insertTweetData } from "./modules/InsertTweetData.js";
 import { onReady } from "./events/onReady.js";
 import { getAllSubscribedChannels } from "./modules/getChannelData.js";
+import { SendMessage } from "./interfaces/SendMessage.js";
 
 const sendMessage = async (
   client: Client,
   channelId: string,
   text: string
-): Promise<boolean> => {
+): Promise<SendMessage> => {
   const channel = (await client.channels.cache.get(channelId)) as TextChannel;
   if (channel) {
+    const sentObj = {
+      channelId: channel.id,
+      channelName: channel.name,
+      sent: true,
+    };
     try {
       await channel.send({
         content: text,
       });
-      return true;
+      return sentObj;
     } catch (e) {
-      return false;
+      sentObj.sent = false;
+      return sentObj;
     }
   }
-  return false;
+  return { channelId, sent: false };
 };
 
 const sendMessageToAllSubscribed = async (
   client: Client,
   text: string
-): Promise<boolean[]> => {
+): Promise<SendMessage[]> => {
   const allChannels = await getAllSubscribedChannels();
   if (!allChannels) {
     log.warn("No channel linked");
-    return [false];
+    return [];
   }
   const sendToAll = allChannels.map((channel) => {
     return sendMessage(client, channel.channelId, text);
@@ -73,11 +80,15 @@ const scheduledJob = async (client: Client) => {
   log.info("Tweet in DB: ", tweetInDB);
   if (!tweetInDB) {
     const isSent = await sendMessageToAllSubscribed(client, tweetUrl);
-    log.info(
-      "Tweet sent to ALL discord",
-      isSent.every((val) => val === true)
-    );
-    if (isSent.some((res) => res === true)) await insertTweetData(tweetUrl);
+    const isAll = isSent.every(({ sent }) => sent === true);
+    log.info("Tweet sent to ALL discord", isAll);
+    if (!isAll)
+      log.warn(
+        "Tweet not sent to",
+        isSent.filter(({ sent }) => sent === false)
+      );
+    if (isSent.some(({ sent }) => sent === true))
+      await insertTweetData(tweetUrl);
   }
 };
 

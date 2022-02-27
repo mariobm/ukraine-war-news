@@ -39,6 +39,7 @@ export const linkChannel: CommandInt = {
       const dbChannel = await getChannelData(channel.id);
       const status = await upsertChannelData(
         channel.id,
+        channel.name,
         !dbChannel?.subscribed
       );
 
