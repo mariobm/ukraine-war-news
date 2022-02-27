@@ -10,11 +10,15 @@ import cheerio from "cheerio";
 import cron from "node-cron";
 import { getTweetData } from "./modules/getTweetData.js";
 import { insertTweetData } from "./modules/InsertTweetData.js";
+import { onReady } from "./events/onReady.js";
+import { getAllSubscribedChannels } from "./modules/getChannelData.js";
 
-const sendMessage = async (client: Client, text: string): Promise<boolean> => {
-  const channel = (await client.channels.cache.get(
-    "947557573807198288"
-  )) as TextChannel;
+const sendMessage = async (
+  client: Client,
+  channelId: string,
+  text: string
+): Promise<boolean> => {
+  const channel = (await client.channels.cache.get(channelId)) as TextChannel;
   if (channel) {
     await channel.send({
       content: text,
@@ -22,6 +26,21 @@ const sendMessage = async (client: Client, text: string): Promise<boolean> => {
     return true;
   }
   return false;
+};
+
+const sendMessageToAllSubscribed = async (
+  client: Client,
+  text: string
+): Promise<boolean[]> => {
+  const allChannels = await getAllSubscribedChannels();
+  if (!allChannels) {
+    log.warn("No channel linked");
+    return [false];
+  }
+  const sendToAll = allChannels.map((channel) => {
+    return sendMessage(client, channel.channelId, text);
+  });
+  return await Promise.all(sendToAll);
 };
 
 const scrapeReddit = async (): Promise<string> => {
@@ -45,23 +64,23 @@ const isAlreadyInDatabase = async (url: string): Promise<boolean> => {
 (async () => {
   validateEnv();
   const BOT = new Client({ intents: IntentOptions });
-  BOT.on("ready", () => console.log("Connected to Discord!"));
+  BOT.on("ready", async () => await onReady(BOT));
   await connectDatabase();
   await BOT.login(process.env.BOT_TOKEN);
   BOT.on(
     "interactionCreate",
     async (interaction) => await onInteraction(interaction)
   );
-  cron.schedule("*/5 * * * *", async () => {
+  cron.schedule("*/10 * * * *", async () => {
     log.info("Starting cron");
     const tweetUrl = await scrapeReddit();
     log.info("Tweet url: ", tweetUrl);
     const tweetInDB = await isAlreadyInDatabase(tweetUrl);
     log.info("Tweet in DB: ", tweetInDB);
     if (!tweetInDB) {
-      const isSent = await sendMessage(BOT, tweetUrl);
+      const isSent = await sendMessageToAllSubscribed(BOT, tweetUrl);
       log.info("Tweet sent to discord", isSent);
-      if (isSent) await insertTweetData(tweetUrl);
+      if (isSent.some((res) => !!res)) await insertTweetData(tweetUrl);
     }
   });
 })();
