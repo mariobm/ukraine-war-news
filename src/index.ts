@@ -20,10 +20,14 @@ const sendMessage = async (
 ): Promise<boolean> => {
   const channel = (await client.channels.cache.get(channelId)) as TextChannel;
   if (channel) {
-    await channel.send({
-      content: text,
-    });
-    return true;
+    try {
+      await channel.send({
+        content: text,
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
   return false;
 };
@@ -73,7 +77,7 @@ const scheduledJob = async (client: Client) => {
       "Tweet sent to ALL discord",
       isSent.every((val) => val === true)
     );
-    if (isSent.some((res) => !!res)) await insertTweetData(tweetUrl);
+    if (isSent.some((res) => res === true)) await insertTweetData(tweetUrl);
   }
 };
 
