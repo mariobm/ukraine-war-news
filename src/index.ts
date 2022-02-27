@@ -70,7 +70,7 @@ const scheduledJob = async (client: Client) => {
   if (!tweetInDB) {
     const isSent = await sendMessageToAllSubscribed(client, tweetUrl);
     log.info(
-      "Tweet sent to ALL subscribed discord channels",
+      "Tweet sent to ALL discord",
       isSent.every((val) => val === true)
     );
     if (isSent.some((res) => !!res)) await insertTweetData(tweetUrl);

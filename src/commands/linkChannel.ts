@@ -36,7 +36,6 @@ export const linkChannel: CommandInt = {
         return;
       }
 
-      console.log(channel);
       const dbChannel = await getChannelData(channel.id);
       const status = await upsertChannelData(
         channel.id,
@@ -46,7 +45,7 @@ export const linkChannel: CommandInt = {
       if (status) {
         await interaction.editReply({
           content: `The channel ${channel.name} has been successfully ${
-            dbChannel?.subscribed ? "linked" : "unlinked"
+            !dbChannel?.subscribed ? "linked" : "unlinked"
           }.`,
         });
       }
