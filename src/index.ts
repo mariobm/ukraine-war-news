@@ -1,4 +1,4 @@
-import { Client, TextChannel } from "discord.js";
+import { Client, TextChannel, ThreadChannel } from "discord.js";
 import { IntentOptions } from "./config/IntentOptions.js";
 import { connectDatabase } from "./database/connectDatabase.js";
 import { onInteraction } from "./events/onInteraction.js";
@@ -13,10 +13,13 @@ import { insertTweetData } from "./modules/InsertTweetData.js";
 
 const sendMessage = async (client: Client, text: string): Promise<boolean> => {
   const channel = (await client.channels.cache.get(
-    "585420060370141195"
-  )) as TextChannel;
+    "947186507217788938"
+  )) as ThreadChannel;
   if (channel) {
-    await channel.send(text);
+    if (!channel.joined && channel?.joinable) await channel.join();
+    await channel.send({
+      content: text,
+    });
     return true;
   }
   return false;
@@ -58,6 +61,7 @@ const isAlreadyInDatabase = async (url: string): Promise<boolean> => {
     log.info("Tweet in DB: ", tweetInDB);
     if (!tweetInDB) {
       const isSent = await sendMessage(BOT, tweetUrl);
+      log.info("Tweet sent to discord", isSent);
       if (isSent) await insertTweetData(tweetUrl);
     }
   });
