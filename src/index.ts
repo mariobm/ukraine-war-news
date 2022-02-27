@@ -61,6 +61,22 @@ const isAlreadyInDatabase = async (url: string): Promise<boolean> => {
   return getTweetData(url).then((data) => !!data);
 };
 
+const scheduledJob = async (client: Client) => {
+  log.info("Starting cron");
+  const tweetUrl = await scrapeReddit();
+  log.info("Tweet url: ", tweetUrl);
+  const tweetInDB = await isAlreadyInDatabase(tweetUrl);
+  log.info("Tweet in DB: ", tweetInDB);
+  if (!tweetInDB) {
+    const isSent = await sendMessageToAllSubscribed(client, tweetUrl);
+    log.info(
+      "Tweet sent to ALL subscribed discord channels",
+      isSent.every((val) => val === true)
+    );
+    if (isSent.some((res) => !!res)) await insertTweetData(tweetUrl);
+  }
+};
+
 (async () => {
   validateEnv();
   const BOT = new Client({ intents: IntentOptions });
@@ -71,16 +87,6 @@ const isAlreadyInDatabase = async (url: string): Promise<boolean> => {
     "interactionCreate",
     async (interaction) => await onInteraction(interaction)
   );
-  cron.schedule("*/10 * * * *", async () => {
-    log.info("Starting cron");
-    const tweetUrl = await scrapeReddit();
-    log.info("Tweet url: ", tweetUrl);
-    const tweetInDB = await isAlreadyInDatabase(tweetUrl);
-    log.info("Tweet in DB: ", tweetInDB);
-    if (!tweetInDB) {
-      const isSent = await sendMessageToAllSubscribed(BOT, tweetUrl);
-      log.info("Tweet sent to discord", isSent);
-      if (isSent.some((res) => !!res)) await insertTweetData(tweetUrl);
-    }
-  });
+  await scheduledJob(BOT);
+  cron.schedule("*/10 * * * *", async () => await scheduledJob(BOT));
 })();
