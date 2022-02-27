@@ -60,7 +60,7 @@ const scrapeReddit = async (): Promise<string> => {
     .then(({ data }) => {
       const $ = cheerio.load(data); // Initialize cheerio
       const text = $(
-        "body > div.content > div.main-content > ol > li:nth-child(2) .md > p > a"
+        "body > div.content > div.main-content > ol > li:nth-child(1) .md > p > a"
       )
         .html()
         ?.toString();
@@ -103,5 +103,5 @@ const scheduledJob = async (client: Client) => {
     async (interaction) => await onInteraction(interaction)
   );
   await scheduledJob(BOT);
-  cron.schedule("*/10 * * * *", async () => await scheduledJob(BOT));
+  cron.schedule("*/5 * * * *", async () => await scheduledJob(BOT));
 })();
