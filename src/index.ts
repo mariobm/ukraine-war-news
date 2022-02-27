@@ -53,7 +53,7 @@ const isAlreadyInDatabase = async (url: string): Promise<boolean> => {
     "interactionCreate",
     async (interaction) => await onInteraction(interaction)
   );
-  cron.schedule("*/30 * * * * *", async () => {
+  cron.schedule("*/5 * * * *", async () => {
     log.info("Starting cron");
     const tweetUrl = await scrapeReddit();
     log.info("Tweet url: ", tweetUrl);
