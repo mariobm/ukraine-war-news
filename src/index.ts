@@ -74,7 +74,8 @@ const isAlreadyInDatabase = async (url: string): Promise<boolean> => {
 
 const scheduledJob = async (client: Client) => {
   log.info("Starting cron");
-  const tweetUrl = await scrapeReddit();
+  let tweetUrl = await scrapeReddit();
+  tweetUrl = tweetUrl.split("?")[0];
   log.info("Tweet url: ", tweetUrl);
   const tweetInDB = await isAlreadyInDatabase(tweetUrl);
   log.info("Tweet in DB: ", tweetInDB);
